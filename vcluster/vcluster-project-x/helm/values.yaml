@@ -20,8 +20,6 @@ vcluster:
           size: 5Gi
     backingStore:
       etcd:
-        embedded:
-          enabled: true
         deploy:
           statefulSet:
             scheduling:
