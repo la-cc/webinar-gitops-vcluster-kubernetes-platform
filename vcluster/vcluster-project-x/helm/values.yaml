@@ -1,0 +1,58 @@
+vcluster:
+  sync:
+    fromHost:
+      nodes:
+        enabled: false
+
+  controlPlane:
+    statefulSet:
+      scheduling:
+        nodeSelector:
+          project: project-x
+        tolerations:
+          - key: "project"
+            operator: "Equal"
+            value: "project-x"
+            effect: "NoSchedule"
+      persistence:
+        volumeClaim:
+          enabled: true
+          size: 5Gi
+    backingStore:
+      etcd:
+        embedded:
+          enabled: true
+        deploy:
+          statefulSet:
+            scheduling:
+              nodeSelector:
+                project: project-x
+              tolerations:
+                - key: "project"
+                  operator: "Equal"
+                  value: "project-x"
+                  effect: "NoSchedule"
+
+    coredns:
+      enabled: true
+      deployment:
+        replicas: 1
+        nodeSelector:
+            project: project-x
+        tolerations:
+          - key: "project"
+            operator: "Equal"
+            value: "project-x"
+            effect: "NoSchedule"
+
+
+
+    distro:
+      k3s:
+        enabled: true
+        image:
+          repository: rancher/k3s
+          tag: v1.26.0-k3s1
+
+
+

@@ -1,0 +1,54 @@
+# Log file
+*.log
+
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Ignore Gradle build output directory
+build
+
+.vs
+.vscode
+
+/secrets
+
+# ignore all certificates
+
+distributions/azure/azure.properties
+
+.DS_Store
+**/secrets
+
+### Terraform ###
+terraform/keypaths.tfvars
+.terraform*
+**/terraform.tfvars
+**/*.tfstate*
+**/.terraform*
+
+launchers/demo-e2e/edc-config.properties
+**/out
+*.hprof
+
+.env
+runtime_settings.properties
+generated_backend.tf
+
+### Helm ###
+**/Chart.lock
+/**/**/charts
+/**/**/*.tgz
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+/out/
+*/out

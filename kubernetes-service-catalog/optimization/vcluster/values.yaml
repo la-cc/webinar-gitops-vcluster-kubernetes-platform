@@ -1,0 +1,58 @@
+ vcluster:
+  sync:
+    toHost:
+      ingresses:
+        enabled: false
+    fromHost:
+      nodes:
+        enabled: false
+
+  controlPlane:
+    distro:
+      k3s:
+        enabled: true
+        image:
+          repository: rancher/k3s
+          tag: v1.26.0-k3s1
+    statefulSet:
+      persistence:
+        volumeClaim:
+          enabled: true
+          size: 5Gi
+    service:
+      enabled: true
+    ingress:
+      enabled: false
+    coredns:
+      enabled: true
+      deployment:
+        replicas: 1
+      service:
+        spec:
+          type: ClusterIP
+
+  policies:
+    resourceQuota:
+      enabled: true
+      quota:
+        requests.cpu: 10
+        requests.memory: 20Gi
+        requests.storage: 100Gi
+        requests.ephemeral-storage: 50Gi
+        limits.cpu: 20
+        limits.memory: 40Gi
+        limits.ephemeral-storage: 150Gi
+        services.nodeports: 1
+        services.loadbalancers: 1
+        count/endpoints: 40
+        count/pods: 30
+        count/services: 30
+        count/secrets: 100
+        count/configmaps: 100
+        count/persistentvolumeclaims: 20
+
+  rbac:
+    role:
+      enabled: true
+    clusterRole:
+      enabled: auto

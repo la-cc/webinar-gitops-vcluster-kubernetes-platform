@@ -1,0 +1,7 @@
+argo-cd:
+  global:
+    tolerations:
+      - key: "infrastructure"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"

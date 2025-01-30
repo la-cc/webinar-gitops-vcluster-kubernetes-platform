@@ -1,0 +1,22 @@
+argo-cd:
+  global:
+    revisionHistoryLimit: 2
+
+  dex:
+    enabled: false
+
+  server:
+    replicas: 1
+
+  repoServer:
+    replicas: 1
+  applicationSet:
+    replicaCount: 1
+    metrics:
+      enabled: false
+      serviceMonitor:
+        enabled: false
+  redis:
+    metrics:
+      enabled: false
+
