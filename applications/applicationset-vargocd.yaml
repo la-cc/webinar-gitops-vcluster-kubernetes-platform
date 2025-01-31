@@ -13,7 +13,7 @@ spec:
           branch: main
   template:
     metadata:
-      name: "{{name}}-argocd
+      name: "{{name}}-argocd"
       annotations:
         argocd.argoproj.io/manifest-generate-paths: ".;.."
     spec:
