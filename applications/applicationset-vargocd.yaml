@@ -29,7 +29,7 @@ spec:
             releaseName: "argocd"
             valueFiles:
               - "values.yaml"
-              - "$valuesRepo/vcluster/vcluster-project-x/{{name}}/system/argocd/values.yaml"
+              - "$valuesRepo/vcluster/{{name}}/system/argocd/values.yaml"
       destination:
         name: "{{name}}"
         namespace: "argocd"
