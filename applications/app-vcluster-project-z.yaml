@@ -9,7 +9,7 @@ spec:
     server: "https://kubernetes.default.svc"
   sources:
     - repoURL: https://github.com/la-cc/webinar-gitops-vcluster-kubernetes-platform.git
-      path: vcluster/vcluster-project-z
+      path: vcluster/project-z
       targetRevision: main
     - repoURL: https://github.com/la-cc/webinar-gitops-vcluster-kubernetes-platform.git
       targetRevision: main
