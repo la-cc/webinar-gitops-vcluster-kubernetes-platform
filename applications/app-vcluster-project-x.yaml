@@ -21,7 +21,7 @@ spec:
         releaseName: "vcluster"
         valueFiles:
           - "values.yaml"
-          - "$valuesRepo/vcluster/vcluster-project-x/helm/values.yaml"
+          - "$valuesRepo/vcluster/project-x/helm/values.yaml"
   project: default
   syncPolicy:
     automated:
