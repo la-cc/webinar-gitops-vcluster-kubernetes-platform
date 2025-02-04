@@ -52,3 +52,8 @@ generated_backend.tf
 *.ipr
 /out/
 */out
+
+### Kubernetes ###
+kubeconfig.yaml
+.config
+.kube

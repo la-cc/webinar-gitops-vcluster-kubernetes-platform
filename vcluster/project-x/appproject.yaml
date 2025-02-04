@@ -4,7 +4,7 @@ metadata:
   name: project-x
   namespace: argocd
 spec:
-  description:  Project-X Project
+  description:  Project - project-x
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'

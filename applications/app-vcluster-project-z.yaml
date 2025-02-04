@@ -1,15 +1,15 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: vcluster-project-x
+  name: vcluster-project-z
 spec:
   destination:
     name: ""
-    namespace: vcluster-project-x
+    namespace: vcluster-project-z
     server: "https://kubernetes.default.svc"
   sources:
     - repoURL: https://github.com/la-cc/webinar-gitops-vcluster-kubernetes-platform.git
-      path: vcluster/vcluster-project-x
+      path: vcluster/vcluster-project-z
       targetRevision: main
     - repoURL: https://github.com/la-cc/webinar-gitops-vcluster-kubernetes-platform.git
       targetRevision: main
@@ -21,7 +21,7 @@ spec:
         releaseName: "vcluster"
         valueFiles:
           - "values.yaml"
-          - "$valuesRepo/vcluster/vcluster-project-x/helm/values.yaml"
+          - "$valuesRepo/vcluster/vcluster-project-z/helm/values.yaml"
   project: default
   syncPolicy:
     automated:

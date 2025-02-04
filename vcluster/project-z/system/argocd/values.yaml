@@ -4,6 +4,5 @@ argo-cd:
     tolerations:
       - key: "project"
         operator: "Equal"
-        value: "project-x"
+        value: "project-z"
         effect: "NoSchedule"
-

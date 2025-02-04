@@ -1,0 +1,8 @@
+argo-cd:
+  global:
+    revisionHistoryLimit: 2
+    tolerations:
+      - key: "project"
+        operator: "Equal"
+        value: "project-x"
+        effect: "NoSchedule"

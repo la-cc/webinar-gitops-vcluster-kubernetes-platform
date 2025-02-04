@@ -8,11 +8,11 @@ vcluster:
     statefulSet:
       scheduling:
         nodeSelector:
-          project: project-x
+          project: "project-z"
         tolerations:
           - key: "project"
             operator: "Equal"
-            value: "project-x"
+            value: "project-z"
             effect: "NoSchedule"
       persistence:
         volumeClaim:
@@ -24,11 +24,11 @@ vcluster:
           statefulSet:
             scheduling:
               nodeSelector:
-                project: project-x
+                project: "project-z"
               tolerations:
                 - key: "project"
                   operator: "Equal"
-                  value: "project-x"
+                  value: "project-z"
                   effect: "NoSchedule"
 
     coredns:
@@ -36,11 +36,11 @@ vcluster:
       deployment:
         replicas: 1
         nodeSelector:
-            project: project-x
+            project: "project-z"
         tolerations:
           - key: "project"
             operator: "Equal"
-            value: "project-x"
+            value: "project-z"
             effect: "NoSchedule"
 
 
@@ -50,7 +50,6 @@ vcluster:
         enabled: true
         image:
           repository: rancher/k3s
-          tag: v1.26.0-k3s1
-
+          tag: v1.31.1-k3s1
 
 
