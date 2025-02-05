@@ -1,4 +1,6 @@
 argo-cd:
+  dex:
+    enabled: false
   redis:
     metrics:
       enabled: false
