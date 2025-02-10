@@ -6,9 +6,7 @@ ENV PATH=/usr/local/src:$PATH
 ARG KUBECTL_VERSION=1.32.0
 ARG HELM_VERSION=3.13.0
 
-
-
-# install python build dependencies
+# Install Python build dependencies and other required tools
 RUN apk --no-cache add \
     gcc \
     musl-dev \
@@ -25,53 +23,48 @@ RUN apk --no-cache add \
     apache2-utils \
     gettext
 
-
-# update pip
+# Update pip
 RUN pip3 install --upgrade pip
 
-# install requirements
-COPY src/python/bootstrap/requirements.txt /tmp/requirements.txt
+# Install Python requirements
+COPY tools/templater/src/python/bootstrap/requirements.txt /tmp/requirements.txt
 RUN pip3 install -r /tmp/requirements.txt
 
-# install envsubst
+# Install envsubst
 RUN apk --no-cache add gettext
 
-
-# install kubectl
+# Install kubectl
 RUN curl -L "https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl" \
     -o kubectl \
     && chmod +x kubectl \
     && mv kubectl /usr/local/bin
 
-# install helm
+# Install helm
 RUN curl -L "https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz" \
     -o helm.tar.gz \
     && tar -zxvf helm.tar.gz \
     && mv linux-amd64/helm /usr/local/bin \
     && rm -rf linux-amd64 helm.tar.gz
 
-
 # Copy validation schemas
-COPY src/python/bootstrap/schemas /usr/local/lib/python3.10/schemas
+COPY tools/templater/src/python/bootstrap/schemas /usr/local/lib/python3.10/schemas
 
-# copy binaries
-COPY src/python/bootstrap/config-template /usr/local/bin
+# Copy binaries
+COPY tools/templater/src/python/bootstrap/config-template /usr/local/bin
 
-# copy templates
-COPY src/templates /usr/local/src/templates
+# Copy templates
+COPY tools/templater/src/templates /usr/local/src/templates
 
-# copy initial config files
-COPY src/configs /usr/local/src/configs
+# Copy initial config files
+COPY tools/templater/src/configs /usr/local/src/configs
 
-
-
-# copy bash scripts
-COPY src/bash/ /usr/local/bin
+# Copy bash scripts
+COPY tools/templater/src/bash/ /usr/local/bin
 RUN chmod +x /usr/local/bin/*
 
 WORKDIR /mnt/pwd
 
-# setup
+# Setup entrypoint to load environment variables and kubeconfig
 ENTRYPOINT ["/bin/sh", "-c", "\
     export $(grep -v '^#' .env | xargs) && \
     echo \"$KUBECONFIG_BASE64\" | base64 -d > /tmp/kubeconfig && \
@@ -80,5 +73,3 @@ ENTRYPOINT ["/bin/sh", "-c", "\
     ", "--"]
 
 CMD ["bash"]
-# ENTRYPOINT ["tail", "-f", "/dev/null"]
-
