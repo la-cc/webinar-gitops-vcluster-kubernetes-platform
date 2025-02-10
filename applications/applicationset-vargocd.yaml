@@ -4,6 +4,10 @@ kind: ApplicationSet
 metadata:
   name: argocd
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=true
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   generators:
     - clusters:
