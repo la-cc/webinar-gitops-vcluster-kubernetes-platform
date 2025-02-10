@@ -10,9 +10,6 @@
 *.tar.gz
 *.rar
 
-# Ignore Gradle build output directory
-build
-
 .vs
 .vscode
 
