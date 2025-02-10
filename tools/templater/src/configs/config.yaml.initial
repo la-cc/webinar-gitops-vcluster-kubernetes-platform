@@ -1,0 +1,16 @@
+clusters:
+  - name: <project-name>
+    ssoGroup: <
+    nodePools:
+      - name: "ppol-infra"
+        availability_zones: ["eu01-2"]
+        machine_type: "c1.2"
+        maximum: 2
+        minimum: 1
+        os_version_min: "4081.2.0"
+        labels:
+          project: "infrastructure"
+        taints:
+          - key: "infrastructure"
+            value: "true"
+            effect: "NoSchedule"

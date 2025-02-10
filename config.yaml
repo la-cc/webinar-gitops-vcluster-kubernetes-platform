@@ -1,0 +1,4 @@
+clusters:
+  - project: project-x
+    nodePools:
+      - name: "workload"

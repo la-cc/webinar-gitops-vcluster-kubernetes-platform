@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+set -eo pipefail
+#========
+# CHECK PREREQUIREMENTS
+# - grep
+#========
+for cmd in grep
+do
+  command -v ${cmd} > /dev/null || {  echo >&2 "${cmd} must be installed - exiting..."; exit 1; }
+done
+
+#========
+# DEFAULTS
+# - all related default values inside this script
+#========
+SCRIPT_DIR="$(cd "$(dirname "$0")" ; pwd -P)"
+PWD="$(pwd -P)"
+DEFAULT_TARGET_FILENAME="config"
+DEFAULT_TARGET_PATH="${PWD}"
+DEFAULT_FORCE=0
+
+#========
+# FUNCTIONS
+#========
+function infoEcho {
+    echo "INFO: ${1}" 1>&2
+}
+
+function errorEcho {
+    echo "ERROR: ${1}" 1>&2
+    exit 1
+}
+
+function errorUsage {
+    echo "ERROR: ${1}" 1>&2
+    echo ""
+    usage
+    exit 1
+}
+
+function usage() {
+  echo "Creates initial configuration file at current directory"
+  echo ""
+  echo "usage: $0 [options]"
+  echo ""
+  echo "        -t --target-path <path>:      Path to generated config file (default: ${DEFAULT_TARGET_PATH}) (ENV: TARGET_PATH)"
+  echo "        -n --filename:                Filename to generated config file (default: ${DEFAULT_TARGET_FILENAME}) (ENV: TARGET_FILENAME)"
+  echo "        -f --force:                   Overwrite existing config file is already existing (default: ${DEFAULT_FORCE}) (ENV: FORCE)"
+  echo ""
+  echo "environment variables:"
+  echo ""
+  echo "        TARGET_PATH <path>:           Path to generated config file (default: ${DEFAULT_TARGET_PATH})"
+  echo "        FORCE <0|1>:                  Overwrite existing config file is already existing (default: ${DEFAULT_FORCE})"
+}
+
+#========
+# SCRIPT
+#========
+while [[ $# -gt 0 ]]; do
+    key="${1}"
+
+    case $key in
+        --target-path|-t)
+        shift
+        export TARGET_PATH="${1}"
+        shift
+        ;;
+        --filename|-n)
+        shift
+        export TARGET_FILENAME="${1}"
+        ;;
+        --force|-f)
+        shift
+        export FORCE=1
+        ;;
+        --help|-h|help)
+        usage
+        exit 0
+        ;;
+        *)
+        shift
+    esac
+done
+
+# Assign default values if optional argument is empty
+for variable in TARGET_PATH TARGET_FILENAME FORCE; do
+  if [[ -z ${!variable} || ${!variable} == '<no value>' ]]; then
+    default_var_name="DEFAULT_${variable}"
+    export "${variable}=${!default_var_name}"
+  fi
+done
+
+# Check for existing config file at given path
+if [ -f "${TARGET_PATH}/${TARGET_FILENAME}.yaml" ] && [ "${FORCE}" -ne "1"  ]; then
+  errorEcho "Config file ${TARGET_PATH}/${TARGET_FILENAME}.yaml already exists and FORCE is not enabled. Delete file to generate new one!"
+else
+  infoEcho "Copied initial config file to ${TARGET_PATH}/${TARGET_FILENAME}.yaml"
+  cp /usr/local/src/configs/config.yaml.initial "${TARGET_PATH}/${TARGET_FILENAME}.yaml"
+fi

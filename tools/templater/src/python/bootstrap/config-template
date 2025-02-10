@@ -1,0 +1,292 @@
+#!/usr/bin/env python3
+import getopt
+import os
+import sys
+import yaml
+import shutil
+import termios
+import tty
+import datetime
+from jinja2 import Environment, FileSystemLoader
+from schema import SchemaUnexpectedTypeError, SchemaError
+
+# Import your configuration schema from schemas.py (ensure you have a schemas.py with your config_schema)
+from schemas import config
+
+usage = """
+Usage:
+  config-template [OPTIONS]
+
+Options:
+  --help, -h               Show this help message.
+  --config-file, -c        Path to the config.yaml (Default: ./config.yaml).
+  --work_dir, -w           Working directory (Default: current directory).
+  --template-path, -t      Path to the Jinja2 templates (Default: /usr/local/src/templates).
+
+  --apps                   Render the 'applications' templates.
+  --terraform              Render the 'terraform/example' templates.
+  --vcluster               Render the 'vcluster/example' templates.
+  --all                    Render all templates (apps, terraform, and vcluster).
+
+Behavior:
+  - If no flags are specified, the help message is shown.
+  - In "terraform/example" and "vcluster/example", the string "example" in the folder
+    path is replaced with the project name (cluster.project).
+  - In "applications", any file with the name "app-vcluster-project-x.yaml.tpl" is re-created,
+    replacing "project-x" with the project name.
+"""
+
+
+def getchr(prompt=''):
+    """
+    Reads a single character from stdin in raw mode without waiting for Enter.
+    """
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        return sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+
+def read_version_file(path):
+    """
+    Reads a version file from a given path.
+    Raises FileNotFoundError if the file does not exist,
+    and ValueError if the file is empty.
+    """
+    if os.path.isfile(path):
+        with open(path, "r") as text_file:
+            version = text_file.read()
+        if version.strip() == "":
+            raise ValueError("file is empty")
+        return version
+    else:
+        raise FileNotFoundError(f"file {path} not found!")
+
+
+def main(argv):
+    """
+    Main entry point:
+      1. Parse arguments.
+      2. Read and validate config.
+      3. Set up the Jinja2 environment.
+      4. Choose which template subsets to render (applications, terraform, vcluster, or all).
+      5. Clean up directories.
+      6. Render templates.
+    """
+    # If no arguments are provided, print usage and exit.
+    if len(argv) == 0:
+        print(usage)
+        sys.exit(0)
+
+    work_dir = ""
+    config_file_path = ""
+    templates_path = ""
+
+    # Flags for rendering subsets.
+    render_apps = False
+    render_terraform = False
+    render_vcluster = False
+    render_all = False
+
+    try:
+        opts, args = getopt.getopt(
+            argv,
+            "hf:t:w:c:",
+            [
+                "help", "config-file=", "work_dir=", "template-path=",
+                "apps", "terraform", "vcluster", "all"
+            ]
+        )
+    except getopt.GetoptError:
+        print(usage)
+        sys.exit(2)
+
+    # Evaluate command line options.
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            print(usage)
+            sys.exit()
+        if opt in ("-c", "--config-file"):
+            config_file_path = arg
+        if opt in ("-w", "--work_dir"):
+            work_dir = arg
+        if opt in ("-t", "--template-path"):
+            templates_path = arg
+        if opt == "--apps":
+            render_apps = True
+        if opt == "--terraform":
+            render_terraform = True
+        if opt == "--vcluster":
+            render_vcluster = True
+        if opt == "--all":
+            render_all = True
+
+    # If --all is provided, render all subsets.
+    if render_all:
+        render_apps = True
+        render_terraform = True
+        render_vcluster = True
+
+    # If no subset flags are set, show usage and exit.
+    if not (render_apps or render_terraform or render_vcluster):
+        print(usage)
+        sys.exit(0)
+
+    # Use current directory if work_dir is not set.
+    if not work_dir:
+        work_dir = os.path.realpath(os.getcwd())
+
+    # Default path for templates if not specified.
+    if not templates_path:
+        templates_path = "/usr/local/src/templates"
+
+    # Default config file if not specified.
+    if not config_file_path:
+        config_file_path = os.path.join(work_dir, "config.yaml")
+
+    # Load and validate configuration file.
+    try:
+        with open(config_file_path) as cf:
+            configfile = yaml.load(cf, Loader=yaml.FullLoader)
+
+        validated_config = config.config_schema.validate(configfile)
+
+        # Add a timestamp field for use in templates if needed.
+        validated_config["timestamp"] = datetime.date.today()
+
+    except SchemaUnexpectedTypeError as e:
+        sys.exit(e.code)
+    except SchemaError as e:
+        sys.exit(e.code)
+    except Exception as e:
+        print(str(e))
+        sys.exit(1)
+
+    # Set up the Jinja2 environment.
+    env = Environment(
+        loader=FileSystemLoader(searchpath=templates_path),
+        extensions=[
+            "jinja2_getenv_extension.GetenvExtension",
+            "jinja2_base64_filters.Base64Filters"
+        ]
+    )
+
+    # Collect all '.tpl' templates from the environment.
+    all_templates = [x for x in env.list_templates() if x.endswith('.tpl')]
+
+    # 1) Render APPLICATIONS templates.
+    if render_apps:
+        apps_dir = os.path.join(work_dir, "applications")
+        shutil.rmtree(apps_dir, ignore_errors=True)
+        apps_templates = [
+            x for x in all_templates if x.startswith("applications/")]
+        print("Rendering APPLICATIONS templates...")
+        template_files(
+            validated_config=validated_config,
+            templates=apps_templates,
+            work_dir=work_dir,
+            env=env,
+            overwrite=True,
+            cluster_id_field="project",  # Using 'project' instead of 'name'
+            special_replacements=[("project-x", lambda project_id: project_id)]
+        )
+
+    # 2) Render TERRAFORM templates.
+    if render_terraform:
+        terraform_dir = os.path.join(work_dir, "terraform")
+        shutil.rmtree(terraform_dir, ignore_errors=True)
+        terraform_templates = [
+            x for x in all_templates if x.startswith("terraform/")]
+        print("Rendering TERRAFORM templates...")
+        template_files(
+            validated_config=validated_config,
+            templates=terraform_templates,
+            work_dir=work_dir,
+            env=env,
+            overwrite=True,
+            cluster_id_field="project"  # Replace 'example' with project value
+        )
+
+    # 3) Render VCLUSTER templates.
+    if render_vcluster:
+        vcluster_dir = os.path.join(work_dir, "vcluster")
+        shutil.rmtree(vcluster_dir, ignore_errors=True)
+        vcluster_templates = [
+            x for x in all_templates if x.startswith("vcluster/")]
+        print("Rendering VCLUSTER templates...")
+        template_files(
+            validated_config=validated_config,
+            templates=vcluster_templates,
+            work_dir=work_dir,
+            env=env,
+            overwrite=True,
+            cluster_id_field="project"  # Replace 'example' with project value
+        )
+
+
+def template_files(validated_config, templates, work_dir, env, overwrite, cluster_id_field, special_replacements=None):
+    """
+    Renders the specified template files for each cluster in the validated_config.
+    It replaces the string 'example' in the template path with the project value (cluster[cluster_id_field]).
+    Additionally, if special_replacements is provided (a list of (search_str, replacement_function) tuples),
+    then for any output path containing the search string, the replacement_function is applied to produce
+    the replacement text.
+
+    :param validated_config: The full configuration dictionary after validation.
+    :param templates: List of template file names (from the Jinja2 environment).
+    :param work_dir: The base directory where rendered files will be placed.
+    :param env: The Jinja2 Environment used for rendering.
+    :param overwrite: If True, existing files will be overwritten.
+    :param cluster_id_field: The field in each cluster dict used for replacement (now "project").
+    :param special_replacements: Optional list of tuples (search_str, replacement_func).
+           For example, [("project-x", lambda project_id: project_id)].
+    """
+    for cluster in validated_config["clusters"]:
+        project_id = cluster[cluster_id_field]
+
+        for template in templates:
+            # Replace 'example' with the project id in the template path.
+            output_path = template.replace("example", project_id)
+            # Apply any special replacements (e.g. in file names within applications).
+            if special_replacements:
+                for search_str, replacement_func in special_replacements:
+                    if search_str in output_path:
+                        output_path = output_path.replace(
+                            search_str, replacement_func(project_id))
+            # Remove the ".tpl" extension.
+            output_path = output_path.replace(".tpl", "")
+
+            # Build the full output path on disk.
+            full_path = os.path.join(work_dir, output_path)
+
+            # Prepare the data for rendering.
+            compiled_config = validated_config.copy()
+            compiled_config["cluster"] = cluster
+
+            rendered_output = env.get_template(
+                template).render(compiled_config)
+
+            # If the file exists and overwrite is False, skip.
+            if os.path.exists(full_path) and not overwrite:
+                print(
+                    f"Skipped template file {full_path} since it already exists.")
+                continue
+
+            # Only write to disk if the rendered template is non-empty.
+            if rendered_output.strip():
+                os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                print(f"Storing template file {full_path}")
+                with open(full_path, "w") as f:
+                    f.write(rendered_output)
+            else:
+                print(
+                    f"Skipping template file {full_path} because output is empty.")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
