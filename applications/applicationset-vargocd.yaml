@@ -42,7 +42,11 @@ spec:
         automated:
           prune: true
           selfHeal: true
+          allowEmpty: true
         syncOptions:
           - CreateNamespace=false
+          - ApplyOutOfSyncOnly=true
+          - PruneLast=true
+          - PrunePropagationPolicy=background
         retry:
           limit: 5
